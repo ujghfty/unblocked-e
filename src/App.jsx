@@ -6,7 +6,7 @@ import { GameCard } from './components/GameCard.jsx';
 import { GamePlayer } from './components/GamePlayer.jsx';
 import { AddGameModal } from './components/AddGameModal.jsx';
 import { JsonEditorModal } from './components/JsonEditorModal.jsx';
-import { Gamepad2, SearchX, Flame, Plus } from 'lucide-react';
+import { Gamepad2, SearchX, Plus, FileCode2 } from 'lucide-react';
 
 export default function App() {
   const [games, setGames] = useState(() => {
@@ -14,7 +14,15 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
+          // If the cached list has the old pre-loaded sample games, clear them
+          const hasOldSamples = parsed.some(
+            (g) => g.id === 'snake' && (g.iframeUrl?.includes('snake') || g.title?.includes('Snake'))
+          );
+          if (hasOldSamples) {
+            localStorage.removeItem('unblocked_games_custom');
+            return [];
+          }
           return parsed;
         }
       } catch (e) {
@@ -30,9 +38,9 @@ export default function App() {
   const [favorites, setFavorites] = useState(() => {
     try {
       const favs = localStorage.getItem('unblocked_games_favs');
-      return favs ? JSON.parse(favs) : ['snake', 'tetris'];
+      return favs ? JSON.parse(favs) : [];
     } catch {
-      return ['snake', 'tetris'];
+      return [];
     }
   });
 
@@ -48,8 +56,7 @@ export default function App() {
         return res.json();
       })
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          // If local storage has custom games, merge or preserve them
+        if (Array.isArray(data)) {
           const savedCustom = localStorage.getItem('unblocked_games_custom');
           if (!savedCustom) {
             setGames(data);
@@ -57,8 +64,26 @@ export default function App() {
         }
       })
       .catch((err) => {
-        console.warn('Using bundled default games:', err);
+        console.warn('Could not load games.json:', err);
       });
+  }, []);
+
+  // Clear any legacy default games in local storage
+  useEffect(() => {
+    const saved = localStorage.getItem('unblocked_games_custom');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.some((g) => g.id === 'snake')) {
+          localStorage.removeItem('unblocked_games_custom');
+          localStorage.removeItem('unblocked_games_favs');
+          setGames([]);
+          setFavorites([]);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
   }, []);
 
   // Save favorites to localStorage
@@ -90,7 +115,9 @@ export default function App() {
 
   const handleResetDefaults = () => {
     localStorage.removeItem('unblocked_games_custom');
-    setGames(DEFAULT_GAMES);
+    localStorage.removeItem('unblocked_games_favs');
+    setGames([]);
+    setFavorites([]);
   };
 
   // Category counts
@@ -117,9 +144,9 @@ export default function App() {
       // Search match
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
-        const matchTitle = game.title.toLowerCase().includes(q);
-        const matchDesc = game.description.toLowerCase().includes(q);
-        const matchCat = game.category.toLowerCase().includes(q);
+        const matchTitle = game.title?.toLowerCase().includes(q);
+        const matchDesc = game.description?.toLowerCase().includes(q);
+        const matchCat = game.category?.toLowerCase().includes(q);
         const matchControls = game.controls?.toLowerCase().includes(q);
         return matchTitle || matchDesc || matchCat || matchControls;
       }
@@ -151,36 +178,6 @@ export default function App() {
         ) : (
           /* Game Catalog & Lobby View */
           <div className="flex flex-col gap-6">
-            {/* Quick Banner & Categories */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800/80 p-4 sm:p-5 rounded-2xl">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Flame className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">
-                    Free & Instant Play
-                  </span>
-                </div>
-                <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight">
-                  HTML5 Unblocked Games
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                  Play directly in-browser. All games are stored as iframes in our JSON dataset.
-                </p>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex items-center gap-2 self-start md:self-auto">
-                <button
-                  id="catalog-add-game-btn"
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Add Iframe Game</span>
-                </button>
-              </div>
-            </div>
-
             {/* Category Filter Pills */}
             <CategoryFilter
               selectedCategory={selectedCategory}
@@ -205,29 +202,41 @@ export default function App() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-900/40 border border-slate-800/60 rounded-2xl">
-                <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-3">
-                  <SearchX className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-400 mb-4 shadow-inner">
+                  <Gamepad2 className="w-7 h-7" />
                 </div>
-                <h3 className="text-base font-bold text-white mb-1">No Games Found</h3>
-                <p className="text-xs text-slate-400 max-w-sm mb-4">
-                  {searchQuery
-                    ? `No games matched "${searchQuery}". Try a different search term or category.`
+                <h3 className="text-base sm:text-lg font-bold text-white mb-1">
+                  {games.length === 0 ? 'No Games In Catalog' : 'No Games Found'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-400 max-w-md mb-6 leading-relaxed">
+                  {games.length === 0
+                    ? 'All default games have been removed. Add custom iframe games or paste your games JSON to build your catalog.'
+                    : searchQuery
+                    ? `No games matched "${searchQuery}". Try a different search term or select another category.`
                     : 'No games in this category yet.'}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-3">
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg transition-colors"
+                      className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg transition-colors border border-slate-700"
                     >
                       Clear Search
                     </button>
                   )}
                   <button
                     onClick={() => setIsAddModalOpen(true)}
-                    className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white rounded-lg shadow-sm transition-all"
                   >
-                    Add Game Iframe
+                    <Plus className="w-4 h-4" />
+                    <span>Add Game Iframe</span>
+                  </button>
+                  <button
+                    onClick={() => setIsJsonModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    <FileCode2 className="w-4 h-4 text-slate-400" />
+                    <span>Open games.json Editor</span>
                   </button>
                 </div>
               </div>
