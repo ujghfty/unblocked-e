@@ -1,0 +1,6 @@
+{
+  "name": "Unblocked Games",
+  "description": "A lightweight, clean unblocked games portal loading games via iframes from a structured JSON file.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
