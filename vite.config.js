@@ -10,7 +10,28 @@ const __dirname = path.dirname(__filename);
 export default defineConfig(() => {
   return {
     base: './',
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'vite-dev-entry-resolver',
+        transformIndexHtml: {
+          order: 'pre',
+          handler(html) {
+            return html.replace('./assets/index.js', '/src/main.jsx');
+          },
+        },
+      },
+    ],
+    build: {
+      rollupOptions: {
+        output: {
+          entryFileNames: 'assets/[name].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name].[ext]',
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
