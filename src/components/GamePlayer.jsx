@@ -29,6 +29,19 @@ export const GamePlayer = ({ game, onBack }) => {
     }
   };
 
+  // Helper to ensure paths work on GitHub Pages subpaths
+  const resolveGameUrl = (url) => {
+    if (!url) return '';
+    if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
+      return url;
+    }
+    const cleanPath = url.startsWith('/') ? url.slice(1) : url.startsWith('./') ? url.slice(2) : url;
+    const base = import.meta.env.BASE_URL || './';
+    return base.endsWith('/') ? `${base}${cleanPath}` : `${base}/${cleanPath}`;
+  };
+
+  const gameSrc = resolveGameUrl(game.iframeUrl);
+
   return (
     <div className="flex flex-col h-full w-full max-w-6xl mx-auto px-2 sm:px-4 py-3 gap-3">
       {/* Top Player Navigation Bar */}
@@ -82,7 +95,7 @@ export const GamePlayer = ({ game, onBack }) => {
 
           <a
             id="player-popout-link"
-            href={game.iframeUrl}
+            href={gameSrc}
             target="_blank"
             rel="noopener noreferrer"
             title="Open game in raw new tab"
@@ -125,7 +138,7 @@ export const GamePlayer = ({ game, onBack }) => {
         <iframe
           key={iframeKey}
           id="active-game-iframe"
-          src={game.iframeUrl}
+          src={gameSrc}
           title={game.title}
           allow="autoplay; fullscreen; gamepad; keyboard"
           sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-pointer-lock"
@@ -141,7 +154,7 @@ export const GamePlayer = ({ game, onBack }) => {
             <span className="text-slate-400">{game.controls}</span>
           </div>
           <span className="text-[11px] text-slate-500 font-mono hidden sm:inline">
-            Iframe source: {game.iframeUrl}
+            Iframe source: {gameSrc}
           </span>
         </div>
       )}

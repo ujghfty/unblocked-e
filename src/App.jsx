@@ -39,11 +39,12 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
 
-  // Fetch games from /games.json on initial load if no custom data
+  // Fetch games from games.json on initial load if no custom data
   useEffect(() => {
-    fetch('/games.json')
+    const jsonUrl = import.meta.env.BASE_URL ? `${import.meta.env.BASE_URL}games.json` : './games.json';
+    fetch(jsonUrl)
       .then((res) => {
-        if (!res.ok) throw new Error('Could not fetch /games.json');
+        if (!res.ok) throw new Error(`Could not fetch ${jsonUrl}`);
         return res.json();
       })
       .then((data) => {
