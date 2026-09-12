@@ -10,6 +10,22 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'><rect width='20' height='12' x='2' y='6' rx='6'/><path d='M12 12h.01M15 12h.01M9 12h.01M6 12h.01'/></svg>" />
+    <script>
+      // When raw source index.html is served directly on GitHub Pages without Vite build,
+      // seamlessly forward the browser to the pre-built /docs/ production bundle.
+      (function() {
+        try {
+          var isCompiled = !!document.querySelector('link[href*="assets/"]') || !!document.querySelector('script[src*="assets/"]');
+          var isGitHubPages = window.location.hostname.endsWith('github.io');
+          if (!isCompiled && isGitHubPages && !window.location.pathname.includes('/docs')) {
+            var target = window.location.pathname.replace(/\/+$/, '') + '/docs/' + window.location.search + window.location.hash;
+            window.location.replace(target);
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen">
     <div id="root">
